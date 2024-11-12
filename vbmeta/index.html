@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改VBMETA校验</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--background);
+            transition: background-color 0.3s;
+        }
+
+        .card {
+            width: 90%;
+            max-width: 400px;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .dark-theme {
+            --background: #121212;
+            color: white;
+        }
+
+        .dark-theme .card {
+            background-color: #1e1e1e;
+        }
+
+        .light-theme {
+            --background: #ffffff;
+            color: black;
+        }
+
+        .light-theme .card {
+            background-color: #f7f7f7;
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .checkbox input {
+            display: none;
+        }
+
+        .checkbox-label {
+            position: relative;
+            padding-left: 30px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #6200ea;
+            border-radius: 4px;
+            background: white;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .checkbox input:checked+.checkbox-label::before {
+            background: #6200ea;
+            border-color: #6200ea;
+        }
+
+        .download-btn {
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .download-btn:hover {
+            background-color: #3700b3;
+        }
+    </style>
+</head>
+
+<body class="light-theme">
+
+    <div class="card" id="file-card">
+        <h2>拖入或选择Vbmeta文件</h2>
+        <input type="file" id="file-input" style="display:none;" />
+        <div id="drop-area" style="border: 2px dashed #6200ea; padding: 20px; text-align: center;">
+            <p>将文件拖到这里，或<a href="#" id="select-file">点击选择文件</a></p>
+        </div>
+        <div id="file-content" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>选项</h2>
+        <div class="checkbox">
+            <input type="checkbox" id="option1" checked>
+            <label class="checkbox-label" for="option1">DISABLE_VERITY</label>
+        </div>
+        <div class="checkbox">
+            <input type="checkbox" id="option2" checked>
+            <label class="checkbox-label" for="option2">DISABLE_VERIFICATION</label>
+        </div>
+        <button class="download-btn" id="download-btn">下载</button>
+    </div>
+    <script src="./vbmeta_disable_verity.js"></script>
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const selectFile = document.getElementById('select-file');
+        const downloadBtn = document.getElementById('download-btn');
+        const fileContentDiv = document.getElementById('file-content');
+        const option1 = document.getElementById('option1');
+        const option2 = document.getElementById('option2');
+
+        // 文件大小限制：10MB
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = '#e3f2fd';
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.backgroundColor = 'transparent';
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = 'transparent';
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFile(files[0]); // 处理第一个文件
+            }
+        });
+
+        selectFile.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length) {
+                handleFile(files[0]); // 处理第一个文件
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("请先上传一个文件");
+                return;
+            }
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const arrayBuffer = ev.target.result;
+                    ParseVbmetaData(arrayBuffer, option1.checked, option2.checked);
+
+                    const modifiedBlob = new Blob([arrayBuffer], { type: file.type });
+                    const url = URL.createObjectURL(modifiedBlob);
+
+                    // 创建下载链接
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name; // 设置下载文件名
+                    document.body.appendChild(a);
+                    a.click(); // 触发下载
+                    document.body.removeChild(a); // 移除链接
+
+                    // 释放 Blob URL
+                    URL.revokeObjectURL(url);
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        // 文件处理函数
+        function handleFile(file) {
+            if (file.size > MAX_FILE_SIZE) {
+                alert("文件大小超过 10MB，请选择更小的文件");
+                return;
+            }
+
+            // 显示文件信息
+            const fileInfo = `
+        文件名: ${file.name}
+        文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB
+    `;
+            fileContentDiv.textContent = fileInfo; // 显示文件信息
+        }
+
+        // 自动切换主题
+        const setTheme = (theme) => {
+            document.body.classList.remove('dark-theme', 'light-theme');
+            document.body.classList.add(theme);
+        };
+
+        const toggleTheme = () => {
+            const currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme';
+            setTheme(currentTheme);
+        };
+
+        toggleTheme(); // 初始设置主题
+
+        // 监听系统主题变化
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', toggleTheme);
+
+    </script>
+</body>
+
+</html>
