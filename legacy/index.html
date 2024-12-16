@@ -216,7 +216,7 @@
   <header class="mdc-top-app-bar mdc-top-app-bar--fixed">
     <div class="mdc-top-app-bar__row">
       <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-        <span class="mdc-top-app-bar__title">文件上传</span>
+        <span class="mdc-top-app-bar__title">file up</span>
       </section>
     </div>
   </header>
@@ -225,7 +225,7 @@
     <!-- 上传容器 -->
     <div class="upload-container">
       <div id="drop-zone" class="drop-zone">
-        拖拽文件到这里或点击上传
+        boot or recovery, no vbmeta required
       </div>
       <input type="file" id="file-input" style="display: none;" multiple>
     </div>
@@ -329,7 +329,7 @@
       const downloadButton = document.createElement('button');
       downloadButton.classList.add('mdc-button', 'mdc-button--outlined');
       downloadButton.disabled = true; // 初始禁用
-      downloadButton.textContent = '下载处理后文件';
+      downloadButton.textContent = 'download signed file';
 
       // 初始化MDC按钮
       mdc.ripple.MDCRipple.attachTo(downloadButton);
@@ -340,7 +340,7 @@
       // 处理日志区域
       const logSection = document.createElement('div');
       logSection.classList.add('log-section');
-      logSection.textContent = '处理日志：\n';
+      logSection.textContent = 'log：\n';
 
       card.appendChild(header);
       card.appendChild(logSection);
